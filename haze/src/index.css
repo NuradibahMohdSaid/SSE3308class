@@ -33,20 +33,25 @@ body {
   animation: smoke-rise linear infinite;
 }
 
+/* Four overlapping blobs give each puff an uneven, cloudy outline.
+   It swells and turns slowly as it rises, the way real smoke spreads. */
 .smoke-puff::before {
+  --smoke: color-mix(in oklab, var(--color-base-content) 50%, transparent);
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: var(--size);
   height: var(--size);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--color-secondary) 60%, transparent) 0%,
-    transparent 68%
-  );
-  filter: blur(45px);
+  background:
+    radial-gradient(circle at 30% 35%, var(--smoke) 0%, transparent 38%),
+    radial-gradient(circle at 68% 40%, var(--smoke) 0%, transparent 34%),
+    radial-gradient(circle at 45% 68%, var(--smoke) 0%, transparent 42%),
+    radial-gradient(circle at 62% 62%, var(--smoke) 0%, transparent 30%);
+  filter: blur(18px);
+  animation: smoke-swell linear infinite;
+  animation-duration: inherit;
+  animation-delay: inherit;
 }
 
 @keyframes smoke-rise {
@@ -54,15 +59,24 @@ body {
     transform: translate3d(0, 100%, 0);
     opacity: 0;
   }
-  15% {
-    opacity: 0.9;
+  12% {
+    opacity: 0.85;
   }
   70% {
-    opacity: 0.7;
+    opacity: 0.6;
   }
   100% {
     transform: translate3d(var(--drift), -25%, 0);
     opacity: 0;
+  }
+}
+
+@keyframes smoke-swell {
+  from {
+    transform: scale(0.7) rotate(0deg);
+  }
+  to {
+    transform: scale(1.6) rotate(40deg);
   }
 }
 
@@ -78,5 +92,9 @@ body {
   .smoke-puff {
     animation: none;
     opacity: 0.3;
+  }
+
+  .smoke-puff::before {
+    animation: none;
   }
 }

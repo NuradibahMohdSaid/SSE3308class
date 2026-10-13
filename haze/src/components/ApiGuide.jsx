@@ -12,7 +12,7 @@ function ApiGuide({ api, onApiChange }) {
       title="One number tells you how to plan your day"
       intro="Malaysia's Air Pollutant Index turns pollution measurements into a single reading. Pick a band to see what it looks like on a phone."
     >
-      <div className="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
+      <div className="grid items-start gap-10 lg:grid-cols-[1fr_auto]">
         <div className="overflow-x-auto rounded-box border border-base-300 bg-base-100">
           <table className="table">
             <thead>
@@ -61,10 +61,10 @@ function ApiGuide({ api, onApiChange }) {
           </table>
         </div>
 
-        <div className="mockup-phone mx-auto">
+        <div className="mockup-phone mx-auto w-60 lg:-mt-36">
           <div className="mockup-phone-camera"></div>
           <div className="mockup-phone-display bg-base-100 text-base-content">
-            <div className="flex h-full w-72 flex-col items-center gap-4 px-5 pt-14 pb-6 text-center">
+            <div className="flex h-full w-full flex-col items-center gap-3 px-4 pt-20 pb-5 text-center">
               <p className="text-xs font-semibold uppercase tracking-widest text-base-content/60">
                 Air quality now
               </p>
@@ -73,11 +73,11 @@ function ApiGuide({ api, onApiChange }) {
                 data-tip={`${api} out of ${API_MAX} on the API scale`}
               >
                 <div
-                  className="radial-progress font-display text-4xl font-semibold"
+                  className="radial-progress font-display text-3xl font-semibold"
                   style={{
                     '--value': (api / API_MAX) * 100,
-                    '--size': '9rem',
-                    '--thickness': '0.7rem',
+                    '--size': '7rem',
+                    '--thickness': '0.55rem',
                     color: current.color,
                   }}
                   role="progressbar"

@@ -1,10 +1,11 @@
-function Section({ id, eyebrow, title, intro, tinted = false, children }) {
+function Section({ id, eyebrow, title, intro, tinted = false, backdrop, children }) {
   return (
     <section
       id={id}
-      className={`px-4 py-16 lg:py-24 ${tinted ? 'bg-base-200' : 'bg-base-100'}`}
+      className={`relative overflow-hidden px-4 py-16 lg:py-24 ${tinted ? 'bg-base-200' : 'bg-base-100'}`}
     >
-      <div className="mx-auto max-w-6xl">
+      {backdrop}
+      <div className="relative mx-auto max-w-6xl">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">
           {eyebrow}
         </p>
