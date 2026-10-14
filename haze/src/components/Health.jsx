@@ -5,6 +5,7 @@ import Section from './Section.jsx'
 function Health() {
   const [done, setDone] = useState(() => new Set())
   const allDone = done.size === CHECKLIST.length
+  const glow = done.size / CHECKLIST.length
 
   function toggle(item) {
     setDone((previous) => {
@@ -42,7 +43,12 @@ function Health() {
           ))}
         </div>
 
-        <div className="card border border-base-300 bg-base-200">
+        <div
+          className="card border border-accent/40 bg-base-200 transition-shadow duration-500"
+          style={{
+            boxShadow: `0 0 ${20 + glow * 40}px ${glow * 6}px color-mix(in oklab, var(--color-accent) ${20 + glow * 40}%, transparent)`,
+          }}
+        >
           <div className="card-body">
             <h3 className="card-title font-display text-2xl">
               Your haze-ready checklist
