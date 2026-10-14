@@ -41,13 +41,13 @@ function Navbar({ dark, onToggleTheme }) {
               ))}
             </ul>
           </div>
-          <a href="#top" className="btn btn-ghost px-2 font-display text-xl">
+          <a href="#top" className="btn btn-ghost px-2 font-display text-3xl">
             Jerebu
           </a>
         </div>
 
         <div className="navbar-center hidden lg:flex">
-          <ul className="menu menu-horizontal gap-1 px-1">
+          <ul className="menu menu-horizontal gap-1 px-1 text-base">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <a href={link.href}>{link.label}</a>
