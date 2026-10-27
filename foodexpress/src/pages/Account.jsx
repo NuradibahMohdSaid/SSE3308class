@@ -484,7 +484,7 @@ function SettingsTab() {
             <button
               className="btn btn-error"
               onClick={async () => {
-                if (await confirm('Reset all demo data?', 'This clears orders, basket and restaurant changes, and logs you out.', 'Reset everything')) {
+                if (await confirm('Reset all demo data?', 'This clears your orders, basket and reviews, and logs you out.', 'Reset everything')) {
                   resetDemo()
                   logout()
                   toast('Demo data reset', 'info')

@@ -26,7 +26,7 @@ const FAQ = [
   ['Is there a minimum order?', 'Each restaurant sets its own minimum order, shown on the restaurant page and in your basket.'],
   ['Which payment methods do you accept?', 'Credit/debit cards, FPX online banking, e-wallets (Touch ’n Go, GrabPay, Boost) and cash on delivery.'],
   ['Can I cancel my order?', 'Yes — you can cancel any time before the restaurant starts preparing your food.'],
-  ['How do I list my restaurant?', 'Open the “For Restaurants” dashboard to add your restaurant, manage your menu and update order status.'],
+  ['Where can I see a restaurant’s details and menu?', 'Open the “For Restaurants” page and tap a restaurant name to see its address, opening hours, delivery fees and full menu.'],
 ]
 
 // time left until 2 PM today (lunch deal)

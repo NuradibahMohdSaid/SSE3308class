@@ -1,4 +1,4 @@
-import { ArrowUp, Bike, Home, LayoutDashboard, LifeBuoy, MapPin, Plus, Search, Ticket, User, X } from 'lucide-react'
+import { ArrowUp, Bike, Home, LifeBuoy, MapPin, Plus, Search, Store, Ticket, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useStore } from '../context/StoreContext'
@@ -17,7 +17,7 @@ const SIDE_LINKS = [
   { to: '/restaurants', label: 'Restaurants', icon: Search },
   { to: '/track', label: 'Track order', icon: MapPin },
   { to: '/account', label: 'My account', icon: User },
-  { to: '/manage', label: 'Restaurant management', icon: LayoutDashboard },
+  { to: '/restaurant-info', label: 'For Restaurants', icon: Store },
 ]
 
 function SideMenu({ onClose }) {

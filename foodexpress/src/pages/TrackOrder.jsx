@@ -161,7 +161,7 @@ export default function TrackOrder() {
 
   const status = getOrderStatus(order, now)
   const elapsed = (now - order.placedAt) / 1000
-  const progress = status === -1 ? 0 : order.manualStatus != null ? status / 4 : Math.min(1, elapsed / TOTAL_SECONDS)
+  const progress = status === -1 ? 0 : Math.min(1, elapsed / TOTAL_SECONDS)
   const remaining = Math.max(0, Math.ceil(TOTAL_SECONDS - elapsed))
   const step = ORDER_STEPS[Math.max(0, status)]
 
@@ -212,14 +212,10 @@ export default function TrackOrder() {
               {status >= 0 && status < 4 && (
                 <div className="bg-primary text-primary-content rounded-box p-4 text-center">
                   <p className="text-xs font-semibold uppercase">Arriving in</p>
-                  {order.manualStatus == null ? (
-                    <span className="countdown font-mono text-4xl font-bold">
-                      <span style={{ '--value': Math.floor(remaining / 60), '--digits': 2 }} aria-label={`${Math.floor(remaining / 60)} minutes`}>{Math.floor(remaining / 60)}</span>:
-                      <span style={{ '--value': remaining % 60, '--digits': 2 }} aria-label={`${remaining % 60} seconds`}>{remaining % 60}</span>
-                    </span>
-                  ) : (
-                    <p className="text-2xl font-bold">~{(4 - status) * 8} min</p>
-                  )}
+                  <span className="countdown font-mono text-4xl font-bold">
+                    <span style={{ '--value': Math.floor(remaining / 60), '--digits': 2 }} aria-label={`${Math.floor(remaining / 60)} minutes`}>{Math.floor(remaining / 60)}</span>:
+                    <span style={{ '--value': remaining % 60, '--digits': 2 }} aria-label={`${remaining % 60} seconds`}>{remaining % 60}</span>
+                  </span>
                 </div>
               )}
             </div>
@@ -286,7 +282,7 @@ export default function TrackOrder() {
                         </div>
                         <div className="timeline-end timeline-box">
                           <p className={`font-semibold ${done ? '' : 'opacity-50'}`}>{s.label}</p>
-                          <p className="text-xs opacity-60">{done ? (order.manualStatus == null ? fmtTime(order.placedAt + s.at * 1000) : 'Updated by restaurant') : 'Pending'}</p>
+                          <p className="text-xs opacity-60">{done ? fmtTime(order.placedAt + s.at * 1000) : 'Pending'}</p>
                         </div>
                         {i < ORDER_STEPS.length - 1 && <hr className={status > i ? 'bg-primary' : ''} />}
                       </li>

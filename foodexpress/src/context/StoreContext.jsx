@@ -26,11 +26,9 @@ function usePersistentState(key, initial) {
 export const money = (n) => `RM ${Number(n || 0).toFixed(2)}`
 export const uid = (prefix = '') => prefix + Math.random().toString(36).slice(2, 8).toUpperCase()
 
-// Order progress is simulated from the time it was placed, unless a
-// restaurant manager has set the status manually on the management page.
+// Order progress is simulated from the time it was placed.
 export function getOrderStatus(order, now = Date.now()) {
   if (order.cancelled) return -1
-  if (order.manualStatus != null) return order.manualStatus
   const elapsed = (now - order.placedAt) / 1000
   let idx = 0
   ORDER_STEPS.forEach((s, i) => {
@@ -56,8 +54,10 @@ export function computeTotals(cart, restaurant, tip = 0) {
 
 const EMPTY_CART = { restaurantId: null, items: [], promo: null }
 
+// restaurants and menus are read-only for customers
+const restaurants = SEED_RESTAURANTS
+
 export function StoreProvider({ children }) {
-  const [restaurants, setRestaurants] = usePersistentState('fs_restaurants', SEED_RESTAURANTS)
   const [cart, setCart] = usePersistentState('fs_cart', EMPTY_CART)
   const [user, setUser] = usePersistentState('fs_user', null)
   const [orders, setOrders] = usePersistentState('fs_orders', [])
@@ -90,14 +90,7 @@ export function StoreProvider({ children }) {
   }
 
   /* ---------- restaurants ---------- */
-  const getRestaurant = useCallback((id) => restaurants.find((r) => r.id === id), [restaurants])
-  const saveRestaurant = (data) =>
-    setRestaurants((list) =>
-      list.some((r) => r.id === data.id) ? list.map((r) => (r.id === data.id ? data : r)) : [data, ...list],
-    )
-  const deleteRestaurant = (id) => setRestaurants((list) => list.filter((r) => r.id !== id))
-  const updateRestaurant = (id, patch) =>
-    setRestaurants((list) => list.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+  const getRestaurant = useCallback((id) => restaurants.find((r) => r.id === id), [])
 
   /* ---------- cart ---------- */
   const cartRestaurant = cart.restaurantId ? getRestaurant(cart.restaurantId) : null
@@ -155,7 +148,6 @@ export function StoreProvider({ children }) {
       customer: user?.name || details.name,
       rider: RIDERS[Math.floor(Math.random() * RIDERS.length)],
       placedAt: Date.now(),
-      manualStatus: null,
       cancelled: false,
       rated: null,
     }
@@ -203,7 +195,6 @@ export function StoreProvider({ children }) {
     setReviews((r) => ({ ...r, [restaurantId]: [review, ...(r[restaurantId] || [])] }))
 
   const resetDemo = () => {
-    setRestaurants(structuredClone(SEED_RESTAURANTS))
     setOrders([])
     setCart(EMPTY_CART)
     setReviews({})
@@ -211,7 +202,7 @@ export function StoreProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      restaurants, getRestaurant, saveRestaurant, deleteRestaurant, updateRestaurant,
+      restaurants, getRestaurant,
       cart, cartRestaurant, cartCount, addToCart, setQty, clearCart, applyPromo, removePromo,
       orders, placeOrder, updateOrder, reorder,
       user, login, logout, updateUser,
@@ -222,7 +213,7 @@ export function StoreProvider({ children }) {
       resetDemo,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [restaurants, cart, user, orders, favorites, reviews, theme, toasts, confirmState],
+    [cart, user, orders, favorites, reviews, theme, toasts, confirmState],
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

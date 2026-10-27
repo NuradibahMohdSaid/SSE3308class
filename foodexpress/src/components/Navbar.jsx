@@ -1,4 +1,4 @@
-import { Heart, LayoutDashboard, LogOut, Menu, Package, Search, ShoppingBag, Sun, Moon, User } from 'lucide-react'
+import { Heart, LogOut, Menu, Package, Search, ShoppingBag, Sun, Moon, User } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { money, useStore } from '../context/StoreContext'
@@ -10,7 +10,7 @@ export const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/restaurants', label: 'Restaurants' },
   { to: '/track', label: 'Track Order' },
-  { to: '/manage', label: 'For Restaurants' },
+  { to: '/restaurant-info', label: 'For Restaurants' },
 ]
 
 export default function Navbar({ onOpenMenu, onOpenCart }) {
@@ -27,18 +27,19 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
 
   return (
     <header className="navbar bg-base-100/90 border-base-300 sticky top-0 z-40 border-b px-2 backdrop-blur md:px-6">
-      <div className="navbar-start gap-1">
+      {/* start and end take only the space they need, the links fill the middle, so nothing overlaps */}
+      <div className="navbar-start w-auto shrink-0 gap-1">
         <button className="btn btn-ghost btn-circle lg:hidden" aria-label="Open menu" onClick={onOpenMenu}>
           <Menu className="size-5" />
         </button>
         <Logo />
       </div>
 
-      <nav className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal gap-1 px-1 font-medium">
+      <nav className="navbar-center hidden min-w-0 flex-1 justify-center lg:flex">
+        <ul className="menu menu-horizontal flex-nowrap gap-1 px-1 font-medium">
           {NAV_LINKS.map((l) => (
             <li key={l.to}>
-              <NavLink to={l.to} end={l.to === '/'} className={({ isActive }) => (isActive ? 'menu-active' : '')}>
+              <NavLink to={l.to} end={l.to === '/'} className={({ isActive }) => `whitespace-nowrap ${isActive ? 'menu-active' : ''}`}>
                 {l.label}
               </NavLink>
             </li>
@@ -46,14 +47,27 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
         </ul>
       </nav>
 
-      <div className="navbar-end gap-1">
-        <form onSubmit={submit} className="hidden md:block">
-          <label className="input input-sm w-44 xl:w-64">
+      <div className="navbar-end ml-auto w-auto shrink-0 gap-1">
+        {/* full search box when there is room: tablets (no links shown) and very wide screens */}
+        <form onSubmit={submit} className="hidden md:block lg:hidden 2xl:block">
+          <label className="input input-sm w-52 2xl:w-64">
             <Search className="size-4 opacity-50" />
             <input type="search" placeholder="Search food or restaurants" value={q} onChange={(e) => setQ(e.target.value)} />
-            <kbd className="kbd kbd-xs hidden xl:inline-flex">↵</kbd>
+            <kbd className="kbd kbd-xs hidden 2xl:inline-flex">↵</kbd>
           </label>
         </form>
+        {/* on laptop widths the links need the space, so search collapses into an icon */}
+        <div className="dropdown dropdown-end hidden lg:block 2xl:hidden">
+          <div tabIndex={0} role="button" className="btn btn-ghost btn-circle" aria-label="Search">
+            <Search className="size-5" />
+          </div>
+          <form tabIndex={0} onSubmit={submit} className="dropdown-content bg-base-100 rounded-box z-50 mt-3 w-72 p-2 shadow-xl">
+            <label className="input w-full">
+              <Search className="size-4 opacity-50" />
+              <input type="search" placeholder="Search food or restaurants" value={q} onChange={(e) => setQ(e.target.value)} />
+            </label>
+          </form>
+        </div>
 
         {/* quick light/dark swap; the palette dropdown has more themes */}
         <label className="btn btn-ghost btn-circle swap swap-rotate" aria-label="Toggle dark mode">
@@ -104,7 +118,6 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
               <li><Link to="/account"><User className="size-4" /> My profile</Link></li>
               <li><Link to="/account?tab=orders"><Package className="size-4" /> My orders</Link></li>
               <li><Link to="/account?tab=favourites"><Heart className="size-4" /> Favourites</Link></li>
-              <li><Link to="/manage"><LayoutDashboard className="size-4" /> Manage restaurants</Link></li>
               <div className="divider my-0" />
               <li>
                 <button

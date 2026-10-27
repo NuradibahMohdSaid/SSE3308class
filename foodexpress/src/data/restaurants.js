@@ -1,5 +1,4 @@
-// Seed data for ForkSpoon. Everything here is copied into localStorage on first
-// load so the Restaurant Management page can add / edit / delete records.
+// Seed data for ForkSpoon: restaurants, menus, promo codes and order steps.
 
 const img = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=70`
 
