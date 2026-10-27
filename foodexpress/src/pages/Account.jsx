@@ -2,7 +2,7 @@ import { Bell, Eye, EyeOff, Heart, KeyRound, LogOut, Mail, MapPin, Package, Penc
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import RestaurantCard from '../components/RestaurantCard'
-import { THEMES } from '../components/ThemeSwitcher'
+import { THEMES } from '../data/themes'
 import { Avatar, EmptyState, SafeImage, StatusBadge } from '../components/ui'
 import { getOrderStatus, money, uid, useNow, useStore } from '../context/StoreContext'
 import { ORDER_STEPS } from '../data/restaurants'
@@ -448,7 +448,7 @@ function SettingsTab() {
       <div className="card bg-base-100 border-base-300 border">
         <div className="card-body">
           <h2 className="card-title">🎨 Appearance</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid max-w-sm grid-cols-2 gap-3">
             {THEMES.map((t) => (
               <label key={t.id} data-theme={t.id} className={`rounded-box bg-base-100 text-base-content cursor-pointer border-2 p-3 ${theme === t.id ? 'border-primary' : 'border-base-300'}`}>
                 <input type="radio" name="theme-radios" className="theme-controller hidden" value={t.id} checked={theme === t.id} onChange={() => setTheme(t.id)} />

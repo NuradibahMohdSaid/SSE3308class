@@ -26,7 +26,7 @@ const FAQ = [
   ['Is there a minimum order?', 'Each restaurant sets its own minimum order, shown on the restaurant page and in your basket.'],
   ['Which payment methods do you accept?', 'Credit/debit cards, FPX online banking, e-wallets (Touch ’n Go, GrabPay, Boost) and cash on delivery.'],
   ['Can I cancel my order?', 'Yes — you can cancel any time before the restaurant starts preparing your food.'],
-  ['Where can I see a restaurant’s details and menu?', 'Open the “For Restaurants” page and tap a restaurant name to see its address, opening hours, delivery fees and full menu.'],
+  ['Where can I see a restaurant’s details and menu?', 'Open the Restaurants page and tap any restaurant to see its full menu, reviews, opening hours and delivery fees.'],
 ]
 
 // time left until 2 PM today (lunch deal)
@@ -336,7 +336,8 @@ export default function Home() {
 
         {/* ---------------- TESTIMONIALS + APP ---------------- */}
         <section className="grid items-center gap-10 lg:grid-cols-2">
-          <div>
+          {/* light card behind the reviews so they stand apart from the app promo */}
+          <div className="bg-base-200 border-base-300 rounded-box border p-5 shadow-sm sm:p-8">
             <SectionHeader eyebrow="Loved by foodies" title="What our customers say" />
             <div className="space-y-2">
               {TESTIMONIALS.map((t) => (
@@ -347,7 +348,7 @@ export default function Home() {
                   <div className="chat-header">
                     {t.name} <time className="text-xs opacity-50">{t.time}</time>
                   </div>
-                  <div className={`chat-bubble ${t.side === 'chat-end' ? 'chat-bubble-primary' : ''}`}>{t.text}</div>
+                  <div className={`chat-bubble ${t.side === 'chat-end' ? 'chat-bubble-primary' : 'bg-base-100'}`}>{t.text}</div>
                   <div className="chat-footer opacity-60">
                     <RatingStars value={5} />
                   </div>
@@ -364,16 +365,17 @@ export default function Home() {
                 <button className="btn btn-neutral" onClick={() => toast('Play Store link coming soon!', 'info')}>▶ Google Play</button>
               </div>
             </div>
-            <div className="mockup-phone border-primary scale-90">
+            {/* phone size: change w-56 (224px) to make it bigger/smaller, e.g. w-48 or w-64 */}
+            <div className="mockup-phone border-primary w-56 shrink-0 rounded-[40px]">
               <div className="mockup-phone-camera" />
-              <div className="mockup-phone-display bg-base-100 text-base-content grid place-content-center">
-                <div className="w-64 space-y-3 p-4 pt-12">
-                  <p className="text-lg font-bold">Hi there 👋</p>
-                  <div className="bg-primary text-primary-content rounded-box p-3 text-sm font-semibold">🛵 Your rider is 3 min away</div>
+              <div className="mockup-phone-display bg-base-100 text-base-content rounded-[32px]">
+                <div className="space-y-2 p-3 pt-8">
+                  <p className="font-bold">Hi there 👋</p>
+                  <div className="bg-primary text-primary-content rounded-box p-2 text-xs font-semibold">🛵 Your rider is 3 min away</div>
                   <progress className="progress progress-primary" value={80} max={100} />
                   {popular.slice(0, 3).map((r) => (
                     <div key={r.id} className="bg-base-200 rounded-box flex items-center gap-2 p-2">
-                      <SafeImage src={r.image} alt="" className="rounded-field size-10 object-cover" />
+                      <SafeImage src={r.image} alt="" className="rounded-field size-8 object-cover" />
                       <div className="text-xs">
                         <p className="font-semibold">{r.name}</p>
                         <p className="opacity-60">⭐ {r.rating} · {r.eta[0]} min</p>

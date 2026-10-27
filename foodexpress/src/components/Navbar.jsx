@@ -1,24 +1,30 @@
-import { Heart, LogOut, Menu, Package, Search, ShoppingBag, Sun, Moon, User } from 'lucide-react'
-import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Heart, LogOut, Menu, Package, Search, ShoppingBag, User } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { money, useStore } from '../context/StoreContext'
 import Logo from './Logo'
 import ThemeSwitcher from './ThemeSwitcher'
 import { Avatar } from './ui'
 
-export const NAV_LINKS = [
+const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/restaurants', label: 'Restaurants' },
   { to: '/track', label: 'Track Order' },
-  { to: '/restaurant-info', label: 'For Restaurants' },
 ]
 
 export default function Navbar({ onOpenMenu, onOpenCart }) {
-  const { cartCount, cart, user, logout, toast, theme, setTheme } = useStore()
+  const { cartCount, cart, user, logout, toast } = useStore()
   const [q, setQ] = useState('')
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   const navigate = useNavigate()
+  // at the top of Home the header takes the hero's dark colour so the two read as one block
+  const onHero = useLocation().pathname === '/' && !scrolled
   const subtotal = cart.items.reduce((s, i) => s + i.price * i.qty, 0)
-  const isDark = theme === 'forkspoon-dark' || theme === 'dark' || theme === 'coffee'
 
   const submit = (e) => {
     e.preventDefault()
@@ -26,20 +32,21 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
   }
 
   return (
-    <header className="navbar bg-base-100/90 border-base-300 sticky top-0 z-40 border-b px-2 backdrop-blur md:px-6">
+    // no border line; dark like the hero at the top of Home, page colour (with a soft shadow) once you scroll
+    <header className={`navbar sticky top-0 z-40 px-2 transition-colors md:px-6 ${onHero ? 'bg-neutral text-neutral-content [&_.btn-ghost]:text-neutral-content' : 'bg-base-100'} ${scrolled ? 'shadow-sm' : ''}`}>
       {/* start and end take only the space they need, the links fill the middle, so nothing overlaps */}
       <div className="navbar-start w-auto shrink-0 gap-1">
         <button className="btn btn-ghost btn-circle lg:hidden" aria-label="Open menu" onClick={onOpenMenu}>
           <Menu className="size-5" />
         </button>
-        <Logo />
+        <Logo light={onHero} />
       </div>
 
       <nav className="navbar-center hidden min-w-0 flex-1 justify-center lg:flex">
         <ul className="menu menu-horizontal flex-nowrap gap-1 px-1 font-medium">
           {NAV_LINKS.map((l) => (
             <li key={l.to}>
-              <NavLink to={l.to} end={l.to === '/'} className={({ isActive }) => `whitespace-nowrap ${isActive ? 'menu-active' : ''}`}>
+              <NavLink to={l.to} end={l.to === '/'} className={({ isActive }) => `whitespace-nowrap ${isActive ? (onHero ? 'bg-primary text-primary-content' : 'menu-active') : ''}`}>
                 {l.label}
               </NavLink>
             </li>
@@ -50,7 +57,7 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
       <div className="navbar-end ml-auto w-auto shrink-0 gap-1">
         {/* full search box when there is room: tablets (no links shown) and very wide screens */}
         <form onSubmit={submit} className="hidden md:block lg:hidden 2xl:block">
-          <label className="input input-sm w-52 2xl:w-64">
+          <label className="input input-sm text-base-content w-52 2xl:w-64">
             <Search className="size-4 opacity-50" />
             <input type="search" placeholder="Search food or restaurants" value={q} onChange={(e) => setQ(e.target.value)} />
             <kbd className="kbd kbd-xs hidden 2xl:inline-flex">↵</kbd>
@@ -61,7 +68,7 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
           <div tabIndex={0} role="button" className="btn btn-ghost btn-circle" aria-label="Search">
             <Search className="size-5" />
           </div>
-          <form tabIndex={0} onSubmit={submit} className="dropdown-content bg-base-100 rounded-box z-50 mt-3 w-72 p-2 shadow-xl">
+          <form tabIndex={0} onSubmit={submit} className="dropdown-content bg-base-100 text-base-content rounded-box z-50 mt-3 w-72 p-2 shadow-xl">
             <label className="input w-full">
               <Search className="size-4 opacity-50" />
               <input type="search" placeholder="Search food or restaurants" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -69,15 +76,8 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
           </form>
         </div>
 
-        {/* quick light/dark swap; the palette dropdown has more themes */}
-        <label className="btn btn-ghost btn-circle swap swap-rotate" aria-label="Toggle dark mode">
-          <input type="checkbox" checked={isDark} onChange={() => setTheme(isDark ? 'forkspoon' : 'forkspoon-dark')} />
-          <Sun className="swap-off size-5" />
-          <Moon className="swap-on size-5" />
-        </label>
-        <div className="hidden sm:block">
-          <ThemeSwitcher />
-        </div>
+        {/* light / dark mode */}
+        <ThemeSwitcher />
 
         {/* cart preview dropdown on desktop, drawer on click */}
         <div className="dropdown dropdown-end dropdown-hover hidden lg:block">
@@ -87,7 +87,7 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
               {cartCount > 0 && <span className="badge badge-sm badge-secondary indicator-item">{cartCount}</span>}
             </div>
           </button>
-          <div tabIndex={0} className="card card-sm dropdown-content bg-base-100 z-50 mt-3 w-64 shadow-xl">
+          <div tabIndex={0} className="card card-sm dropdown-content bg-base-100 text-base-content z-50 mt-3 w-64 shadow-xl">
             <div className="card-body">
               <span className="text-lg font-bold">{cartCount} items</span>
               <span className="text-base-content/70">Subtotal: {money(subtotal)}</span>
@@ -111,7 +111,7 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
               <Avatar name={user.name} src={user.avatar} size="w-9" />
             </div>
-            <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-50 mt-3 w-56 p-2 shadow-xl">
+            <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 text-base-content rounded-box z-50 mt-3 w-56 p-2 shadow-xl">
               <li className="menu-title">
                 <span>Hi, {user.name.split(' ')[0]} 👋</span>
               </li>

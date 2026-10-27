@@ -68,8 +68,13 @@ export function StoreProvider({ children }) {
   const [confirmState, setConfirmState] = useState(null)
 
   useEffect(() => {
+    // only light and dark exist; an old saved theme falls back to light
+    if (theme !== 'forkspoon' && theme !== 'forkspoon-dark') {
+      setTheme('forkspoon')
+      return
+    }
     document.documentElement.dataset.theme = theme
-  }, [theme])
+  }, [theme, setTheme])
 
   /* ---------- feedback helpers ---------- */
   const toast = useCallback((message, type = 'success') => {

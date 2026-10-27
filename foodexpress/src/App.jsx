@@ -6,7 +6,6 @@ import Checkout from './pages/Checkout'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 import RestaurantDetail from './pages/RestaurantDetail'
-import RestaurantInfo from './pages/RestaurantInfo'
 import Restaurants from './pages/Restaurants'
 import TrackOrder from './pages/TrackOrder'
 
@@ -24,7 +23,6 @@ export default function App() {
             <Route path="track" element={<TrackOrder />} />
             <Route path="track/:orderId" element={<TrackOrder />} />
             <Route path="account" element={<Account />} />
-            <Route path="restaurant-info" element={<RestaurantInfo />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

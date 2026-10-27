@@ -19,9 +19,8 @@ npm run build    # production build in dist/
 | Search & filter | `/restaurants`: search restaurants and dishes, cuisine, price, rating, fee, time, open/free/promo toggles, sort, grid/list, pagination |
 | Add to cart & checkout | Item modal (size, add-ons, spice, notes) → basket drawer → 4-step checkout (basket, delivery, payment, review) with promo codes `FORK10`, `FREESHIP`, `YELLOW5` |
 | Track order | `/track`: live status steps, countdown, radial progress, simulated map, rider chat, timeline, cancel, rate, reorder |
-| User account | `/account`: sign in/register (demo), profile and photo upload, ForkPoints, order history, saved addresses, favourites, settings and themes |
-| Restaurant info ("For Restaurants") | `/restaurant-info`: restaurant directory with search and cuisine filter; tap a name to see address, hours, fees, rating and the full menu by section |
-| Responsive design | Mobile dock, side drawer, filter drawer, responsive grids; 8 switchable themes including light and dark yellow |
+| User account | `/account`: sign in/register (demo), profile and photo upload, ForkPoints, order history, saved addresses, favourites, settings and light/dark mode |
+| Responsive design | Mobile dock, side drawer, filter drawer, responsive grids; light and dark mode toggle |
 
 Data is stored in the browser's `localStorage`. Use **Reset demo data** in Account → Settings to clear orders, basket and reviews.
 
@@ -36,6 +35,6 @@ src/
   components/   reusable UI (Navbar, Layout, RestaurantCard, MenuItemCard, ItemModal, CartPanel, ...)
   context/      StoreContext: cart, orders, user, favourites, toasts (persisted to localStorage)
   data/         seed restaurants, menus, promo codes
-  pages/        Home, Restaurants, RestaurantDetail, Checkout, TrackOrder, Account, RestaurantInfo
+  pages/        Home, Restaurants, RestaurantDetail, Checkout, TrackOrder, Account
   index.css     Tailwind + daisyUI plugin + custom "forkspoon" yellow themes
 ```

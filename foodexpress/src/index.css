@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
-/* daisyUI with a few built-in themes users can switch to */
+/* daisyUI: no built-in themes, only the ForkSpoon light and dark themes below */
 @plugin "daisyui" {
-  themes: bumblebee, lemonade, cupcake, retro, coffee, dark;
+  themes: false;
 }
 
 /* ForkSpoon brand theme: sunny yellow, tomato red and leafy green */

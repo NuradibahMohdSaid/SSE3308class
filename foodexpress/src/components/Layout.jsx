@@ -1,4 +1,4 @@
-import { ArrowUp, Bike, Home, LifeBuoy, MapPin, Plus, Search, Store, Ticket, User, X } from 'lucide-react'
+import { ArrowUp, Bike, Home, LifeBuoy, MapPin, Plus, Search, Ticket, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useStore } from '../context/StoreContext'
@@ -17,7 +17,6 @@ const SIDE_LINKS = [
   { to: '/restaurants', label: 'Restaurants', icon: Search },
   { to: '/track', label: 'Track order', icon: MapPin },
   { to: '/account', label: 'My account', icon: User },
-  { to: '/restaurant-info', label: 'For Restaurants', icon: Store },
 ]
 
 function SideMenu({ onClose }) {
@@ -67,8 +66,8 @@ function SideMenu({ onClose }) {
         </li>
       </ul>
       <div className="mt-auto flex items-center justify-between pt-6">
-        <span className="text-sm opacity-70">Theme</span>
-        <ThemeSwitcher align="dropdown-top dropdown-end" name="theme-side" />
+        <span className="text-sm opacity-70">Light / dark mode</span>
+        <ThemeSwitcher />
       </div>
     </div>
   )

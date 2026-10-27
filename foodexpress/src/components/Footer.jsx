@@ -28,7 +28,6 @@ export default function Footer() {
           <h6 className="footer-title">Account</h6>
           <Link to="/account" className="link link-hover">Sign in / Register</Link>
           <Link to="/account?tab=orders" className="link link-hover">Order history</Link>
-          <Link to="/restaurant-info" className="link link-hover">Restaurant details & menus</Link>
         </nav>
         <form
           onSubmit={(e) => {
