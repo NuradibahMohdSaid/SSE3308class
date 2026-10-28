@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Flame, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { money, useStore } from '../context/StoreContext'
 import { ItemTags } from './MenuItemCard'
@@ -19,7 +19,7 @@ const DRINK_ADDONS = [
   { label: 'Extra shot', price: 2.5 },
 ]
 const DRINK_SECTIONS = ['Drinks', 'Coffee', 'Milk Tea', 'Smoothies']
-const SPICE = ['No chilli', 'Mild', 'Medium', 'Hot', 'Very hot 🔥']
+const SPICE = ['No chilli', 'Mild', 'Medium', 'Hot', 'Very hot']
 
 // Customise-and-add dialog for a single menu item
 export default function ItemModal({ item, restaurant, onClose }) {
@@ -123,7 +123,9 @@ export default function ItemModal({ item, restaurant, onClose }) {
               <input type="range" min={0} max={4} value={spice} step={1} className="range range-secondary range-sm w-full" onChange={(e) => setSpice(+e.target.value)} />
               <div className="flex justify-between px-2 text-xs">
                 {SPICE.map((_, i) => (
-                  <span key={i}>{'🌶'.repeat(i) || '0'}</span>
+                  <span key={i} className="flex">
+                    {i === 0 ? '0' : Array.from({ length: i }, (_, j) => <Flame key={j} className="size-3" />)}
+                  </span>
                 ))}
               </div>
             </fieldset>

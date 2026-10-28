@@ -52,12 +52,12 @@ function SideMenu({ onClose }) {
         ))}
         <li>
           <details>
-            <summary>🍽️ Cuisines</summary>
+            <summary>Cuisines</summary>
             <ul>
               {CATEGORIES.slice(1).map((c) => (
                 <li key={c.id}>
                   <Link to={`/restaurants?cat=${encodeURIComponent(c.id)}`}>
-                    {c.icon} {c.name}
+                    {c.name}
                   </Link>
                 </li>
               ))}
@@ -124,7 +124,7 @@ export default function Layout() {
         <input id="nav-drawer" type="checkbox" className="drawer-toggle" checked={menuOpen} onChange={(e) => setMenuOpen(e.target.checked)} />
         <div className="drawer-content flex min-h-screen flex-col">
           <Navbar onOpenMenu={() => setMenuOpen(true)} onOpenCart={() => setCartOpen(true)} />
-          <main className="flex-1">
+          <main className="flex-1 overflow-x-clip">
             <Outlet />
           </main>
           <Footer />

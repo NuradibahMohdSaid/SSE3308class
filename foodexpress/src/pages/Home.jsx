@@ -6,14 +6,14 @@ import { ItemTags } from '../components/MenuItemCard'
 import RestaurantCard from '../components/RestaurantCard'
 import { Avatar, RatingStars, SafeImage, SectionHeader } from '../components/ui'
 import { money, useNow, useStore } from '../context/StoreContext'
-import { CATEGORIES, IMG, PROMO_CODES } from '../data/restaurants'
+import { IMG, PHOTO, PROMO_CODES } from '../data/restaurants'
 
 const PROMO_STYLE = {
   FORK10: 'bg-primary text-primary-content',
   FREESHIP: 'bg-secondary text-secondary-content',
   YELLOW5: 'bg-neutral text-neutral-content',
 }
-const PROMO_EMOJI = { FORK10: '🍔', FREESHIP: '🛵', YELLOW5: '🍰' }
+const PROMO_PHOTO = { FORK10: IMG.burger, FREESHIP: PHOTO.deliveryScooter, YELLOW5: IMG.cake }
 
 const TESTIMONIALS = [
   { name: 'Nur Aisyah', text: 'Ordered nasi lemak at 7am and it arrived still steaming. ForkSpoon is my breakfast hero!', side: 'chat-start', time: '07:42' },
@@ -28,6 +28,48 @@ const FAQ = [
   ['Can I cancel my order?', 'Yes — you can cancel any time before the restaurant starts preparing your food.'],
   ['Where can I see a restaurant’s details and menu?', 'Open the Restaurants page and tap any restaurant to see its full menu, reviews, opening hours and delivery fees.'],
 ]
+
+// wavy edge for the yellow band; flip it for the bottom edge
+function Wave({ flip = false }) {
+  return (
+    <svg viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true" className={`fill-primary/10 block h-8 w-full sm:h-12 ${flip ? '-mt-px rotate-180' : '-mb-px'}`}>
+      <path d="M0,40 C240,0 480,0 720,30 C960,60 1200,60 1440,20 L1440,60 L0,60 Z" />
+    </svg>
+  )
+}
+
+// black "Download on the App Store" / "Get it on Google Play" style badges
+const STORE_LOGOS = {
+  apple: (
+    <svg viewBox="0 0 24 24" className="size-7 fill-white" aria-hidden="true">
+      <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701" />
+    </svg>
+  ),
+  google: (
+    <svg viewBox="0 0 24 24" className="size-7" aria-hidden="true">
+      <path fill="#00C3FF" d="M3 1.5 13.6 12 3 22.5c-.4-.2-.6-.6-.6-1.1V2.6c0-.5.2-.9.6-1.1Z" />
+      <path fill="#00E676" d="M3 1.5c.3-.2.8-.2 1.2 0L17 8.7 13.6 12Z" />
+      <path fill="#FF3A44" d="M13.6 12 17 15.3 4.2 22.5c-.4.2-.9.2-1.2 0Z" />
+      <path fill="#FFC400" d="m17 8.7 3.8 2.1c.9.5.9 1.9 0 2.4L17 15.3 13.6 12Z" />
+    </svg>
+  ),
+}
+
+function StoreBadge({ logo, small, big, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-12 shrink-0 items-center gap-2 rounded-lg border border-white/40 bg-black px-3 text-left whitespace-nowrap text-white transition hover:bg-neutral-800"
+    >
+      {STORE_LOGOS[logo]}
+      <span className="leading-none">
+        <span className="block text-[10px]">{small}</span>
+        <span className="block text-lg font-semibold tracking-tight">{big}</span>
+      </span>
+    </button>
+  )
+}
 
 // time left until 2 PM today (lunch deal)
 function useLunchCountdown() {
@@ -148,25 +190,6 @@ export default function Home() {
       </section>
 
       <div className="mx-auto max-w-7xl space-y-16 px-4 py-10">
-        {/* ---------------- CATEGORIES ---------------- */}
-        <section>
-          <SectionHeader eyebrow="What are you craving?" title="Browse by category" />
-          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
-            {CATEGORIES.map((c) => (
-              <Link
-                key={c.id}
-                to={c.id === 'all' ? '/restaurants' : `/restaurants?cat=${encodeURIComponent(c.id)}`}
-                className="card bg-base-100 border-base-300 hover:border-primary hover:bg-primary/10 w-28 shrink-0 border text-center transition"
-              >
-                <div className="card-body items-center gap-1 p-4">
-                  <span className="text-4xl">{c.icon}</span>
-                  <span className="text-sm font-medium">{c.name}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* ---------------- PROMOS ---------------- */}
         <section id="promos" className="scroll-mt-20">
           <SectionHeader
@@ -193,7 +216,7 @@ export default function Home() {
                         <h3 className="card-title text-2xl font-extrabold">{p.label}</h3>
                         <p className="opacity-80">Use code at checkout{p.min ? ` · min ${money(p.min)}` : ''}</p>
                       </div>
-                      <span className="text-5xl">{PROMO_EMOJI[code]}</span>
+                      <SafeImage src={PROMO_PHOTO[code]} alt="" className="size-20 shrink-0 rounded-full object-cover shadow-md ring-4 ring-white/40" />
                     </div>
                     <div className="card-actions mt-2 items-center justify-between">
                       <kbd className="kbd kbd-lg text-base-content font-bold tracking-widest">{code}</kbd>
@@ -272,11 +295,11 @@ export default function Home() {
         <section className="bg-base-200 rounded-box p-6 md:p-10">
           <SectionHeader eyebrow="Simple as 1-2-3" title="How ForkSpoon works" />
           <ul className="steps steps-vertical lg:steps-horizontal w-full">
-            <li data-content="🔍" className="step step-primary">Choose a restaurant</li>
-            <li data-content="🛒" className="step step-primary">Add dishes to basket</li>
-            <li data-content="💳" className="step step-primary">Checkout securely</li>
-            <li data-content="🛵" className="step step-primary">Track rider live</li>
-            <li data-content="😋" className="step">Enjoy your meal</li>
+            <li className="step step-primary">Choose a restaurant</li>
+            <li className="step step-primary">Add dishes to basket</li>
+            <li className="step step-primary">Checkout securely</li>
+            <li className="step step-primary">Track rider live</li>
+            <li className="step">Enjoy your meal</li>
           </ul>
           <div className="stats stats-vertical bg-base-100 mt-8 w-full shadow md:stats-horizontal">
             <div className="stat">
@@ -309,60 +332,79 @@ export default function Home() {
         </section>
 
         {/* ---------------- WHY + DIFF ---------------- */}
-        <section className="grid items-center gap-10 lg:grid-cols-2">
-          <div>
-            <SectionHeader eyebrow="Why ForkSpoon?" title="Skip the cooking, keep the flavour" />
-            <p className="text-base-content/70">
-              Drag the slider to compare a sad, empty plate with a ForkSpoon feast. We handle the cooking and the delivery so you can focus on eating.
-            </p>
-            <ul className="mt-4 space-y-2">
-              {['Real-time order tracking', 'Hundreds of halal-certified kitchens', 'Secure payments & easy refunds', 'Weekly promo codes'].map((t) => (
-                <li key={t} className="flex items-center gap-2">
-                  <span className="status status-success status-lg" /> {t}
-                </li>
-              ))}
-            </ul>
+        {/* full-width pale yellow band with wavy edges; w-screen + translate breaks out of the page container */}
+        <section className="relative left-1/2 w-screen -translate-x-1/2">
+          <Wave />
+          <div className="bg-primary/10 py-10 lg:py-14">
+            <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 lg:grid-cols-2">
+              {/* isolate keeps the -z-10 watermark behind the text but still on top of the yellow band */}
+              <div className="relative isolate">
+                <span aria-hidden="true" className="font-display text-primary/30 pointer-events-none absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 lg:-left-2 lg:translate-x-0 xl:-left-10 2xl:-left-28 -translate-y-1/2 text-[clamp(4rem,9vw,8rem)] leading-none font-black whitespace-nowrap italic select-none">
+                  ForkSpoon
+                </span>
+                <SectionHeader eyebrow="Why ForkSpoon?" title="Skip the cooking, keep the flavour" />
+                <p className="text-base-content/70">
+                  Drag the slider to compare a sad, empty plate with a ForkSpoon feast. We handle the cooking and the delivery so you can focus on eating.
+                </p>
+                <ul className="mt-4 space-y-2">
+                  {['Real-time order tracking', 'Local favourites from Serdang to Klang', 'Secure payments & easy refunds', 'Weekly promo codes'].map((t) => (
+                    <li key={t} className="flex items-center gap-2">
+                      <span className="status status-success status-lg" /> {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="relative">
+                {/* soft glow behind the photo so it pops off the band */}
+                <div className="bg-primary/50 absolute -top-8 -right-6 size-64 rounded-full blur-3xl" />
+                <div className="bg-secondary/25 absolute -bottom-10 -left-8 size-56 rounded-full blur-3xl" />
+                <figure className="diff rounded-box relative aspect-[16/10] shadow-xl" tabIndex={0}>
+                  <div className="diff-item-1" role="img" tabIndex={0}>
+                    <SafeImage src={IMG.food} alt="ForkSpoon feast" className="object-cover" />
+                  </div>
+                  <div className="diff-item-2" role="img">
+                    <SafeImage src={IMG.plate} alt="Home-cooked plate" className="object-cover grayscale" />
+                  </div>
+                  <div className="diff-resizer" />
+                </figure>
+              </div>
+            </div>
           </div>
-          <figure className="diff rounded-box aspect-[16/10] shadow-xl" tabIndex={0}>
-            <div className="diff-item-1" role="img" tabIndex={0}>
-              <SafeImage src={IMG.food} alt="ForkSpoon feast" className="object-cover" />
-            </div>
-            <div className="diff-item-2" role="img">
-              <SafeImage src={IMG.plate} alt="Home-cooked plate" className="object-cover grayscale" />
-            </div>
-            <div className="diff-resizer" />
-          </figure>
+          <Wave flip />
         </section>
 
         {/* ---------------- TESTIMONIALS + APP ---------------- */}
         <section className="grid items-center gap-10 lg:grid-cols-2">
-          {/* light card behind the reviews so they stand apart from the app promo */}
-          <div className="bg-base-200 border-base-300 rounded-box border p-5 shadow-sm sm:p-8">
-            <SectionHeader eyebrow="Loved by foodies" title="What our customers say" />
-            <div className="space-y-2">
-              {TESTIMONIALS.map((t) => (
-                <div key={t.name} className={`chat ${t.side}`}>
-                  <div className="chat-image">
-                    <Avatar name={t.name} size="w-10" />
+          {/* light card behind the reviews, wrapped in a daisyUI aura-glow (a soft yellow glow that gently pulses); the gradient is widened so the glow reaches the edges of a big card */}
+          <div className="aura aura-glow text-primary block [--aura-padding:0.25rem] [background-image:radial-gradient(farthest-corner,currentColor_55%,transparent_100%)]">
+            <div className="bg-base-200 text-base-content rounded-box p-5 sm:p-8">
+              <SectionHeader eyebrow="Loved by foodies" title="What our customers say" />
+              <div className="space-y-2">
+                {TESTIMONIALS.map((t) => (
+                  <div key={t.name} className={`chat ${t.side}`}>
+                    <div className="chat-image">
+                      <Avatar name={t.name} size="w-10" />
+                    </div>
+                    <div className="chat-header">
+                      {t.name} <time className="text-xs opacity-50">{t.time}</time>
+                    </div>
+                    <div className={`chat-bubble ${t.side === 'chat-end' ? 'chat-bubble-primary' : 'bg-base-100'}`}>{t.text}</div>
+                    <div className="chat-footer opacity-60">
+                      <RatingStars value={5} />
+                    </div>
                   </div>
-                  <div className="chat-header">
-                    {t.name} <time className="text-xs opacity-50">{t.time}</time>
-                  </div>
-                  <div className={`chat-bubble ${t.side === 'chat-end' ? 'chat-bubble-primary' : 'bg-base-100'}`}>{t.text}</div>
-                  <div className="chat-footer opacity-60">
-                    <RatingStars value={5} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
           <div className="flex flex-col items-center gap-6 sm:flex-row lg:justify-end">
-            <div className="text-center sm:text-left">
+            {/* xl:pl-10 nudges the app promo text right, away from the reviews card */}
+            <div className="text-center sm:text-left xl:pl-10">
               <h3 className="text-2xl font-bold">Get the ForkSpoon app</h3>
               <p className="text-base-content/70 my-2">Exclusive app-only deals and faster checkout.</p>
-              <div className="flex justify-center gap-2 sm:justify-start">
-                <button className="btn btn-neutral" onClick={() => toast('App Store link coming soon!', 'info')}>App Store</button>
-                <button className="btn btn-neutral" onClick={() => toast('Play Store link coming soon!', 'info')}>▶ Google Play</button>
+              <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                <StoreBadge logo="apple" small="Download on the" big="App Store" onClick={() => toast('App Store link coming soon!', 'info')} />
+                <StoreBadge logo="google" small="GET IT ON" big="Google Play" onClick={() => toast('Play Store link coming soon!', 'info')} />
               </div>
             </div>
             {/* phone size: change w-56 (224px) to make it bigger/smaller, e.g. w-48 or w-64 */}

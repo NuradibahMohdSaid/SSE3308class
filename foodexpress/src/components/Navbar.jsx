@@ -42,7 +42,7 @@ export default function Navbar({ onOpenMenu, onOpenCart }) {
         <Logo light={onHero} />
       </div>
 
-      <nav className="navbar-center hidden min-w-0 flex-1 justify-center lg:flex">
+      <nav className="hidden min-w-0 flex-1 justify-start lg:ml-6 lg:flex">
         <ul className="menu menu-horizontal flex-nowrap gap-1 px-1 font-medium">
           {NAV_LINKS.map((l) => (
             <li key={l.to}>

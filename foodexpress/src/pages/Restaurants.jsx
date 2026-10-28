@@ -1,4 +1,4 @@
-import { LayoutGrid, List, Search, SlidersHorizontal, X } from 'lucide-react'
+import { LayoutGrid, List, Search, SearchX, SlidersHorizontal, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import ItemModal from '../components/ItemModal'
@@ -44,7 +44,7 @@ function FilterPanel({ filters, setFilters, onReset, counts, prefix }) {
           <label key={c.id} className="label text-base-content cursor-pointer justify-between py-1">
             <span className="flex items-center gap-2">
               <input type="checkbox" className="checkbox checkbox-primary checkbox-sm" checked={filters.cuisines.includes(c.id)} onChange={() => toggleCuisine(c.id)} />
-              {c.icon} {c.name}
+              {c.name}
             </span>
             <span className="badge badge-ghost badge-sm">{counts[c.id] || 0}</span>
           </label>
@@ -66,7 +66,7 @@ function FilterPanel({ filters, setFilters, onReset, counts, prefix }) {
         {[0, 3.5, 4, 4.5].map((r) => (
           <label key={r} className="label text-base-content cursor-pointer gap-2 py-1">
             <input type="radio" name={`${prefix}-rating`} className="radio radio-primary radio-sm" checked={filters.minRating === r} onChange={() => set({ minRating: r })} />
-            {r === 0 ? 'Any rating' : `${r}+ ⭐`}
+            {r === 0 ? 'Any rating' : `${r}+ stars`}
           </label>
         ))}
       </fieldset>
@@ -174,7 +174,7 @@ export default function Restaurants() {
 
   const activeChips = [
     ...filters.cuisines.map((c) => ({ label: c, clear: () => setFilters((f) => ({ ...f, cuisines: f.cuisines.filter((x) => x !== c) })) })),
-    filters.minRating && { label: `${filters.minRating}+ ⭐`, clear: () => setFilters((f) => ({ ...f, minRating: 0 })) },
+    filters.minRating && { label: `${filters.minRating}+ stars`, clear: () => setFilters((f) => ({ ...f, minRating: 0 })) },
     filters.price && { label: '$'.repeat(filters.price), clear: () => setFilters((f) => ({ ...f, price: 0 })) },
     filters.maxFee < 7 && { label: `Fee ≤ ${money(filters.maxFee)}`, clear: () => setFilters((f) => ({ ...f, maxFee: 7 })) },
     filters.maxTime < 60 && { label: `< ${filters.maxTime} min`, clear: () => setFilters((f) => ({ ...f, maxTime: 60 })) },
@@ -213,7 +213,7 @@ export default function Restaurants() {
               className={`btn btn-sm shrink-0 rounded-full ${active ? 'btn-primary' : 'btn-outline border-base-300'}`}
               onClick={() => setFilters((f) => ({ ...f, cuisines: c.id === 'all' ? [] : [c.id] }))}
             >
-              {c.icon} {c.name}
+              {c.name}
             </button>
           )
         })}
@@ -293,7 +293,7 @@ export default function Restaurants() {
               {Array.from({ length: 6 }).map((_, i) => <RestaurantCardSkeleton key={i} />)}
             </div>
           ) : results.length === 0 ? (
-            <EmptyState icon="🔍" title="No restaurants match" text="Try removing a filter or searching for something else.">
+            <EmptyState icon={<SearchX className="size-14 opacity-40" />} title="No restaurants match" text="Try removing a filter or searching for something else.">
               <button className="btn btn-primary" onClick={resetAll}>Reset filters</button>
             </EmptyState>
           ) : (

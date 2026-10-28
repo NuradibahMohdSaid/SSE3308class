@@ -98,8 +98,13 @@ export function StoreProvider({ children }) {
   const getRestaurant = useCallback((id) => restaurants.find((r) => r.id === id), [])
 
   /* ---------- cart ---------- */
-  const cartRestaurant = cart.restaurantId ? getRestaurant(cart.restaurantId) : null
+  const cartRestaurant = (cart.restaurantId && getRestaurant(cart.restaurantId)) || null
   const cartCount = cart.items.reduce((n, i) => n + i.qty, 0)
+
+  // a basket saved for a restaurant that no longer exists (e.g. after the restaurant list changed) is emptied
+  useEffect(() => {
+    if (cart.restaurantId && !getRestaurant(cart.restaurantId)) setCart(EMPTY_CART)
+  }, [cart.restaurantId, getRestaurant, setCart])
 
   const addToCart = async (restaurant, item, qty = 1, options = {}) => {
     if (cart.items.length && cart.restaurantId !== restaurant.id) {

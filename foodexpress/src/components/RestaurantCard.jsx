@@ -1,4 +1,4 @@
-import { Bike, Clock, Heart, Star } from 'lucide-react'
+import { Bike, Clock, Heart, Star, Tag } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { money, useStore } from '../context/StoreContext'
 import { SafeImage } from './ui'
@@ -27,7 +27,7 @@ export default function RestaurantCard({ restaurant: r, layout = 'grid' }) {
 
   const badges = (
     <div className="absolute top-3 left-3 z-10 flex flex-col items-start gap-1">
-      {r.promo && <span className="badge badge-secondary badge-sm shadow">🔥 Promo</span>}
+      {r.promo && <span className="badge badge-secondary badge-sm shadow">Promo</span>}
       {r.freeDelivery && <span className="badge badge-primary badge-sm shadow">Free delivery</span>}
     </div>
   )
@@ -51,7 +51,7 @@ export default function RestaurantCard({ restaurant: r, layout = 'grid' }) {
             <span className="flex items-center gap-1"><Clock className="size-4" /> {r.eta[0]}–{r.eta[1]} min</span>
             <span className="flex items-center gap-1"><Bike className="size-4" /> {r.freeDelivery ? 'Free' : money(r.deliveryFee)}</span>
           </div>
-          {r.promo && <p className="text-secondary text-xs font-semibold">🎁 {r.promo}</p>}
+          {r.promo && <p className="text-secondary flex items-center gap-1 text-xs font-semibold"><Tag className="size-3.5" /> {r.promo}</p>}
         </div>
       </Link>
     )

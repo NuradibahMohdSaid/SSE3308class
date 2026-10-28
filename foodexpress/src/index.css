@@ -76,6 +76,8 @@
 
 @theme {
   --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  /* used only for the big faded "ForkSpoon" watermark on Home */
+  --font-display: "Playfair Display", ui-serif, Georgia, serif;
 }
 
 @layer base {
