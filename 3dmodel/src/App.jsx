@@ -10,7 +10,7 @@ function Model({ url }) {
     <primitive
       object={scene}
       rotation={[-Math.PI / 30, 10, 0]}
-      scale={1}
+      scale={0.4}
     />
   )
 }
@@ -26,10 +26,10 @@ export default function App() {
 
       </h1>
 
-      <Canvas dpr={[1.5, 2]} linear shadows>
+      <Canvas className="scene" dpr={[1.5, 2]} linear shadows>
         <fog attach="fog" args={['#272730', 16, 30]} />
         <ambientLight intensity={0.75 * Math.PI} />
-        <PerspectiveCamera makeDefault position={[0, 0, 16]} fov={75}>
+        <PerspectiveCamera makeDefault position={[0, 0, 20]} fov={50}>
           <spotLight
             castShadow
             intensity={2.25 * Math.PI}
