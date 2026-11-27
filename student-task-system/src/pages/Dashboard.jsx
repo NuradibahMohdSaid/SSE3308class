@@ -218,8 +218,10 @@ export default function Dashboard({ user }) {
   const [folderName, setFolderName] = useState("");
   const [dueDate, setDueDate] = useState(""); // "YYYY-MM-DD"
   const [noDueDate, setNoDueDate] = useState(false);
-  // Which page is shown: "dashboard" (tasks) or "folders" (All Folders page)
-  const [page, setPage] = useState("dashboard"); // "dashboard" | "folders" | "schedule"
+  // Which page is shown:
+  // "dashboard" (overview + add task), "tasks" (full task list),
+  // "folders" (All Folders page) or "schedule" (calendar)
+  const [page, setPage] = useState("dashboard");
   // Schedule page: which month is shown, and which day is selected
   const [calMonth, setCalMonth] = useState(() => {
     const d = new Date();
@@ -324,9 +326,10 @@ export default function Dashboard({ user }) {
     }
   };
 
-  // Open a folder (or "all" / "none"). New tasks go into the open folder.
+  // Open a folder (or "all" / "none") on the My Tasks page.
+  // New tasks go into the open folder.
   const openFolder = (view) => {
-    setPage("dashboard");
+    setPage("tasks");
     setFolderView(view);
     setTaskFolder(view === "all" || view === "none" ? "" : view);
   };
@@ -340,8 +343,10 @@ export default function Dashboard({ user }) {
       await loadFolders();
       setFolderName("");
       setShowNewFolder(false);
-      // On the All Folders page, stay there; otherwise open the new folder
-      if (page !== "folders") openFolder(result.folderId);
+      // My Tasks page: open the new folder. Dashboard: pick it for the next task.
+      // All Folders page: stay there.
+      if (page === "tasks") openFolder(result.folderId);
+      else if (page === "dashboard") setTaskFolder(result.folderId);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -417,18 +422,18 @@ export default function Dashboard({ user }) {
   const viewName =
     view === "all" ? "All folders" : view === "none" ? "No folder" : folderInfo[view].name;
 
-  // Numbers for the cards and the chart (for the open folder)
-  const total = folderTasks.length;
-  const completed = folderTasks.filter((t) => t.completed).length;
+  // Numbers for the dashboard cards, the chart and the sidebar "My Lists".
+  // They always count ALL tasks (every folder).
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
   const pending = total - completed;
   const percent = total ? Math.round((completed / total) * 100) : 0;
+  const allCounts = { all: total, pending, completed };
 
-  // Sidebar "My Lists" always counts ALL tasks (every folder)
-  const allCompleted = tasks.filter((t) => t.completed).length;
-  const allCounts = {
-    all: tasks.length,
-    pending: tasks.length - allCompleted,
-    completed: allCompleted,
+  // Open the My Tasks page showing one list (All / Pending / Completed)
+  const openList = (key) => {
+    openFolder("all");
+    setFilter(key);
   };
 
   // Tasks after the folder, the filter tab and the search box
@@ -441,9 +446,9 @@ export default function Dashboard({ user }) {
     });
   }, [folderTasks, filter, search]);
 
-  const recent = folderTasks.slice(0, 4); // already newest first
+  const recent = tasks.slice(0, 5); // newest first, from every folder
 
-  const onDashboard = page === "dashboard";
+  const onTasks = page === "tasks";
 
   // Folders shown on the All Folders page (the search box filters them)
   const shownFolders = folders
@@ -461,7 +466,7 @@ export default function Dashboard({ user }) {
         <span className="folder-name">All folders</span>
       </button>
       {folders.map((f, i) => (
-        <div key={f.id} className={`folder-link ${onDashboard && view === f.id ? "selected" : ""}`}>
+        <div key={f.id} className={`folder-link ${onTasks && view === f.id ? "selected" : ""}`}>
           <button className="folder-open" onClick={() => openFolder(f.id)}>
             <span className="folder-swatch" style={{ background: folderColour(i) }} />
             {/* plain text: a folder name cannot run as HTML */}
@@ -480,7 +485,7 @@ export default function Dashboard({ user }) {
         </div>
       ))}
       <button
-        className={`folder-link ${onDashboard && view === "none" ? "selected" : ""}`}
+        className={`folder-link ${onTasks && view === "none" ? "selected" : ""}`}
         onClick={() => openFolder("none")}
       >
         <span className="folder-swatch none" />
@@ -747,10 +752,16 @@ export default function Dashboard({ user }) {
         >
         <nav className="side-nav">
           <button
-            className={`side-link ${onDashboard && view === "all" ? "active" : ""}`}
-            onClick={() => openFolder("all")}
+            className={`side-link ${page === "dashboard" ? "active" : ""}`}
+            onClick={() => setPage("dashboard")}
           >
             <Icon name="grid" /> Dashboard
+          </button>
+          <button
+            className={`side-link ${onTasks ? "active" : ""}`}
+            onClick={() => openList("all")}
+          >
+            <Icon name="list" /> My Tasks
           </button>
           <button
             className={`side-link ${page === "schedule" ? "active" : ""}`}
@@ -765,12 +776,8 @@ export default function Dashboard({ user }) {
           {FILTERS.map((f) => (
             <button
               key={f.key}
-              className={`side-link ${onDashboard && view === "all" && filter === f.key ? "selected" : ""}`}
-              onClick={() => {
-                // Show this status across ALL folders
-                openFolder("all");
-                setFilter(f.key);
-              }}
+              className={`side-link ${onTasks && view === "all" && filter === f.key ? "selected" : ""}`}
+              onClick={() => openList(f.key)} // this status across ALL folders
             >
               <span className={`dot ${f.dot}`} />
               {f.label}
@@ -797,9 +804,11 @@ export default function Dashboard({ user }) {
                 ? "All Folders"
                 : page === "schedule"
                   ? "Schedule"
-                  : view === "all"
+                    : page === "dashboard"
                     ? "Dashboard"
-                    : viewName}
+                    : view === "all"
+                      ? "My Tasks"
+                      : viewName}
             </h1>
             <p className="muted">{today}</p>
           </div>
@@ -810,7 +819,12 @@ export default function Dashboard({ user }) {
                 type="search"
                 placeholder={page === "folders" ? "Search folders" : "Search tasks"}
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  // The dashboard has no full list, so searching opens
+                  // My Tasks with every task (all folders, all statuses)
+                  if (page === "dashboard" && e.target.value.trim()) openList("all");
+                }}
                 aria-label={page === "folders" ? "Search folders" : "Search tasks"}
               />
             </label>
@@ -922,89 +936,36 @@ export default function Dashboard({ user }) {
               <p className="muted empty">No folders match "{search}".</p>
             )}
           </section>
-        ) : (
-        <div className="content-grid">
-          {/* ----- Left column ----- */}
-          <div className="col-main">
-            <section className="summary">
-              <div className="summary-card highlight">
-                <span className="summary-icon"><Icon name="list" size={22} /></span>
-                <div>
-                  <strong>{total}</strong>
-                  <span>Total Tasks</span>
-                </div>
-              </div>
-              <div className="summary-card">
-                <span className="summary-icon amber"><Icon name="clock" size={22} /></span>
-                <div>
-                  <strong>{pending}</strong>
-                  <span>Pending</span>
-                </div>
-              </div>
-              <div className="summary-card">
-                <span className="summary-icon green"><Icon name="check" size={22} /></span>
-                <div>
-                  <strong>{completed}</strong>
-                  <span>Completed</span>
-                </div>
-              </div>
-            </section>
-
-            <form className="card add-card" onSubmit={addTask}>
-              <h2>Add a new task</h2>
-              <div className="add-row">
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Finish SSE3308 lab report"
-                  maxLength={100}
-                  aria-label="New task title"
-                />
+        ) : page === "tasks" ? (
+          /* ===== My Tasks page: the full list ===== */
+          <section className="tasks-page">
+            <div className="tasks-toolbar">
+              <label className="view-select">
+                <Icon name="folder" size={16} />
                 <select
-                  className="folder-select"
-                  value={taskFolder}
-                  onChange={(e) => setTaskFolder(e.target.value)}
-                  aria-label="Folder for the new task"
+                  value={view}
+                  onChange={(e) => openFolder(e.target.value)}
+                  aria-label="Show tasks from folder"
                 >
-                  <option value="">No folder</option>
+                  <option value="all">All folders</option>
                   {folders.map((f) => (
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}
+                  <option value="none">No folder</option>
                 </select>
-                <input
-                  type="date"
-                  className="date-input"
-                  value={noDueDate ? "" : dueDate}
-                  min={todayString()}
-                  max="2100-12-31"
-                  onChange={(e) => setDueDate(e.target.value)}
-                  disabled={noDueDate}
-                  aria-label="Due date"
-                  title="Due date"
-                />
-                <button type="submit" className="btn-primary" disabled={busy || !title.trim()}>
-                  <Icon name="plus" size={16} /> Add Task
-                </button>
-              </div>
-              <div className="add-foot">
-                <label className="no-due">
-                  <input
-                    type="checkbox"
-                    checked={noDueDate}
-                    onChange={(e) => setNoDueDate(e.target.checked)}
-                  />
-                  No due date
-                </label>
-                <small className="char-count">{title.length}/100</small>
-              </div>
-            </form>
+              </label>
+              <button className="btn-primary" onClick={() => setPage("dashboard")}>
+                <Icon name="plus" size={16} /> Add Task
+              </button>
+            </div>
 
             {error && <p className="message">{error}</p>}
 
             <section className="card">
               <div className="card-head">
                 <h2>
-                  My Tasks
+                  {taskLabel(visibleTasks.length)}
+                  {filter !== "all" && ` ${filter}`}
                   {view !== "all" && <span className="head-folder"> · {viewName}</span>}
                 </h2>
                 <div className="pills" role="tablist" aria-label="Filter tasks">
@@ -1024,10 +985,10 @@ export default function Dashboard({ user }) {
 
               {visibleTasks.length === 0 ? (
                 <p className="muted empty">
-                  {total === 0
+                  {folderTasks.length === 0
                     ? view === "all"
-                      ? "No tasks yet. Add your first task above."
-                      : "No tasks in this folder yet. Add one above."
+                      ? "No tasks yet. Add your first task on the Dashboard."
+                      : "No tasks in this folder yet."
                     : "No tasks match this filter or search."}
                 </p>
               ) : (
@@ -1091,10 +1052,86 @@ export default function Dashboard({ user }) {
                 </ul>
               )}
             </section>
-          </div>
+          </section>
+        ) : (
+          /* ===== Dashboard: overview only ===== */
+          <div className="dash">
+            <section className="summary">
+              <button className="summary-card highlight" onClick={() => openList("all")}>
+                <span className="summary-icon"><Icon name="list" size={22} /></span>
+                <div>
+                  <strong>{total}</strong>
+                  <span>Total Tasks</span>
+                </div>
+              </button>
+              <button className="summary-card" onClick={() => openList("pending")}>
+                <span className="summary-icon amber"><Icon name="clock" size={22} /></span>
+                <div>
+                  <strong>{pending}</strong>
+                  <span>Pending</span>
+                </div>
+              </button>
+              <button className="summary-card" onClick={() => openList("completed")}>
+                <span className="summary-icon green"><Icon name="check" size={22} /></span>
+                <div>
+                  <strong>{completed}</strong>
+                  <span>Completed</span>
+                </div>
+              </button>
+            </section>
 
-          {/* ----- Right column ----- */}
-          <aside className="col-side">
+            <form className="card add-card" onSubmit={addTask}>
+              <h2>Add a new task</h2>
+              <div className="add-row">
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Finish SSE3308 lab report"
+                  maxLength={100}
+                  aria-label="New task title"
+                />
+                <select
+                  className="folder-select"
+                  value={taskFolder}
+                  onChange={(e) => setTaskFolder(e.target.value)}
+                  aria-label="Folder for the new task"
+                >
+                  <option value="">No folder</option>
+                  {folders.map((f) => (
+                    <option key={f.id} value={f.id}>{f.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={noDueDate ? "" : dueDate}
+                  min={todayString()}
+                  max="2100-12-31"
+                  onChange={(e) => setDueDate(e.target.value)}
+                  disabled={noDueDate}
+                  aria-label="Due date"
+                  title="Due date"
+                />
+                <button type="submit" className="btn-primary" disabled={busy || !title.trim()}>
+                  <Icon name="plus" size={16} /> Add Task
+                </button>
+              </div>
+              <div className="add-foot">
+                <label className="no-due">
+                  <input
+                    type="checkbox"
+                    checked={noDueDate}
+                    onChange={(e) => setNoDueDate(e.target.checked)}
+                  />
+                  No due date
+                </label>
+                <small className="char-count">{title.length}/100</small>
+              </div>
+            </form>
+
+            {error && <p className="message">{error}</p>}
+
+            <div className="dash-grid">
             <section className="card">
               <div className="card-head">
                 <h2>Task Statistic</h2>
@@ -1135,17 +1172,24 @@ export default function Dashboard({ user }) {
             <section className="card">
               <div className="card-head">
                 <h2>Recent Tasks</h2>
+                <button className="link-more" onClick={() => openList("all")}>
+                  View all <Icon name="right" size={14} />
+                </button>
               </div>
               {recent.length === 0 ? (
-                <p className="muted">No tasks yet.</p>
+                <p className="muted">No tasks yet. Add your first task above.</p>
               ) : (
                 <ol className="recent">
                   {recent.map((task, i) => (
                     <li key={task.id}>
                       <span className="recent-num">{i + 1}</span>
                       <div className="recent-text">
+                        {/* plain text: a title cannot run as HTML */}
                         <p>{task.title}</p>
-                        <small>{timeAgo(task.created_at)}</small>
+                        <small>
+                          {timeAgo(task.created_at)}
+                          {folderInfo[task.folder_id] && ` · ${folderInfo[task.folder_id].name}`}
+                        </small>
                       </div>
                       <span className={`status ${task.completed ? "done" : "pending"}`}>
                         {task.completed ? "Done" : "Pending"}
@@ -1155,8 +1199,8 @@ export default function Dashboard({ user }) {
                 </ol>
               )}
             </section>
-          </aside>
-        </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
