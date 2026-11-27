@@ -89,6 +89,8 @@ const ICONS = {
       <line x1="3" y1="11" x2="21" y2="11" />
     </>
   ),
+  left: <polyline points="15 18 9 12 15 6" />,
+  right: <polyline points="9 18 15 12 9 6" />,
   back: (
     <>
       <line x1="19" y1="12" x2="5" y2="12" />
@@ -151,12 +153,23 @@ function formatDate(iso) {
 }
 
 // "5 minutes ago", "yesterday", ...
-// "YYYY-MM-DD" for today in the student's own time zone
-function todayString() {
-  const d = new Date();
+// "YYYY-MM-DD" for a date in the student's own time zone
+function dateKey(d) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+function todayString() {
+  return dateKey(new Date());
+}
+
+// "YYYY-MM-DD" -> local Date
+function keyToDate(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // Text + colour for a task's due date
 function dueInfo(task) {
@@ -199,7 +212,13 @@ export default function Dashboard({ user }) {
   const [dueDate, setDueDate] = useState(""); // "YYYY-MM-DD"
   const [noDueDate, setNoDueDate] = useState(false);
   // Which page is shown: "dashboard" (tasks) or "folders" (All Folders page)
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState("dashboard"); // "dashboard" | "folders" | "schedule"
+  // Schedule page: which month is shown, and which day is selected
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [selectedDay, setSelectedDay] = useState(todayString);
 
   // READ: load only this user's tasks.
   // The .eq() filter is for speed. The real protection is the RLS policy:
@@ -483,6 +502,193 @@ export default function Dashboard({ user }) {
     year: "numeric",
   });
 
+  // ===== Schedule page (calendar of due dates) =====
+  const todayKey = todayString();
+
+  // Tasks grouped by due date (the search box filters them too)
+  const tasksByDay = useMemo(() => {
+    const text = search.trim().toLowerCase();
+    const map = {};
+    tasks.forEach((t) => {
+      if (!t.due_date) return;
+      if (text && !t.title.toLowerCase().includes(text)) return;
+      (map[t.due_date] ||= []).push(t);
+    });
+    return map;
+  }, [tasks, search]);
+
+  // 6 weeks (Mon-Sun) around the shown month; drop the last week if it is all next month
+  const calendarDays = (() => {
+    const offset = (calMonth.getDay() + 6) % 7;
+    const days = Array.from({ length: 42 }, (_, i) =>
+      new Date(calMonth.getFullYear(), calMonth.getMonth(), 1 - offset + i)
+    );
+    return days[35].getMonth() !== calMonth.getMonth() ? days.slice(0, 35) : days;
+  })();
+
+  const monthLabel = calMonth.toLocaleDateString("en-MY", { month: "long", year: "numeric" });
+  const shiftMonth = (n) =>
+    setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + n, 1));
+  const goToDay = (key) => {
+    const d = keyToDate(key);
+    setCalMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    setSelectedDay(key);
+  };
+
+  const dayTasks = tasksByDay[selectedDay] || [];
+  const selectedLabel = keyToDate(selectedDay).toLocaleDateString("en-MY", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  // Upcoming: only tasks that still need to be done
+  const in7Days = (() => {
+    const d = new Date();
+    return dateKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7));
+  })();
+  const openTasks = tasks.filter((t) => !t.completed);
+  const byDue = (a, b) => a.due_date.localeCompare(b.due_date);
+  const overdue = openTasks.filter((t) => t.due_date && t.due_date < todayKey).sort(byDue);
+  const next7 = openTasks
+    .filter((t) => t.due_date && t.due_date >= todayKey && t.due_date <= in7Days)
+    .sort(byDue);
+  const laterCount = openTasks.filter((t) => t.due_date && t.due_date > in7Days).length;
+  const noDueCount = openTasks.filter((t) => !t.due_date).length;
+
+  // One task in the schedule side lists
+  const scheduleItem = (task, showDate) => (
+    <li key={task.id} className={`sched-item ${task.completed ? "done" : ""}`}>
+      <input
+        type="checkbox"
+        checked={task.completed}
+        onChange={() => toggleTask(task.id)}
+        disabled={busy}
+        aria-label={`Mark ${task.title} as ${task.completed ? "pending" : "completed"}`}
+      />
+      <button className="sched-text" onClick={() => goToDay(task.due_date)} title="Show this day">
+        <span className="sched-title">{task.title}</span>
+        <small>
+          {folderInfo[task.folder_id] && (
+            <span style={{ color: folderInfo[task.folder_id].colour }}>
+              {folderInfo[task.folder_id].name} ·{" "}
+            </span>
+          )}
+          {showDate ? dueInfo(task).label : task.completed ? "Completed" : "Pending"}
+        </small>
+      </button>
+    </li>
+  );
+
+  const schedulePage = (
+    <div className="content-grid">
+      <div className="col-main">
+        {error && <p className="message">{error}</p>}
+        <section className="card calendar">
+          <div className="card-head">
+            <h2>{monthLabel}</h2>
+            <div className="cal-nav">
+              <button className="icon-btn" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+                <Icon name="left" size={18} />
+              </button>
+              <button className="btn-small" onClick={() => goToDay(todayKey)}>Today</button>
+              <button className="icon-btn" onClick={() => shiftMonth(1)} aria-label="Next month">
+                <Icon name="right" size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="cal-grid">
+            {WEEKDAYS.map((w) => (
+              <div key={w} className="cal-weekday">{w}</div>
+            ))}
+            {calendarDays.map((d) => {
+              const key = dateKey(d);
+              const list = tasksByDay[key] || [];
+              const classes = [
+                "cal-day",
+                d.getMonth() !== calMonth.getMonth() ? "out" : "",
+                key === todayKey ? "today" : "",
+                key === selectedDay ? "selected" : "",
+              ].join(" ");
+              return (
+                <button
+                  key={key}
+                  className={classes}
+                  onClick={() => setSelectedDay(key)}
+                  aria-label={`${d.toDateString()}: ${taskLabel(list.length)}`}
+                >
+                  <span className="cal-num">{d.getDate()}</span>
+                  <span className="cal-chips">
+                    {list.slice(0, 2).map((t) => (
+                      <span
+                        key={t.id}
+                        className={`cal-chip ${dueInfo(t).tone}`}
+                        style={{ "--chip": folderInfo[t.folder_id]?.colour || "#80869a" }}
+                      >
+                        {t.title}
+                      </span>
+                    ))}
+                    {list.length > 2 && <span className="cal-more">+{list.length - 2} more</span>}
+                  </span>
+                  {list.length > 0 && (
+                    <span className="cal-dots">
+                      {list.slice(0, 3).map((t) => (
+                        <i key={t.id} className={dueInfo(t).tone} />
+                      ))}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="cal-legend">
+            <span><i className="later" /> Upcoming</span>
+            <span><i className="today" /> Today / tomorrow</span>
+            <span><i className="overdue" /> Overdue</span>
+            <span><i className="done" /> Completed</span>
+          </div>
+        </section>
+      </div>
+
+      <aside className="col-side">
+        <section className="card">
+          <div className="card-head">
+            <h2>{selectedLabel}</h2>
+            <span className="badge">{taskLabel(dayTasks.length)}</span>
+          </div>
+          {dayTasks.length === 0 ? (
+            <p className="muted">No tasks due on this day.</p>
+          ) : (
+            <ul className="sched-list">{dayTasks.map((t) => scheduleItem(t, false))}</ul>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <h2>Upcoming</h2>
+          </div>
+          {overdue.length > 0 && (
+            <>
+              <p className="sched-heading overdue">Overdue ({overdue.length})</p>
+              <ul className="sched-list">{overdue.map((t) => scheduleItem(t, true))}</ul>
+            </>
+          )}
+          <p className="sched-heading">Next 7 days ({next7.length})</p>
+          {next7.length === 0 ? (
+            <p className="muted">Nothing due in the next 7 days.</p>
+          ) : (
+            <ul className="sched-list">{next7.map((t) => scheduleItem(t, true))}</ul>
+          )}
+          <p className="muted sched-foot">
+            {laterCount} due later · {noDueCount} with no due date
+          </p>
+        </section>
+      </aside>
+    </div>
+  );
+
   return (
     <div className="app">
       {/* ===== Sidebar ===== */}
@@ -498,6 +704,12 @@ export default function Dashboard({ user }) {
             onClick={() => openFolder("all")}
           >
             <Icon name="grid" /> Dashboard
+          </button>
+          <button
+            className={`side-link ${page === "schedule" ? "active" : ""}`}
+            onClick={() => setPage("schedule")}
+          >
+            <Icon name="calendar" /> Schedule
           </button>
         </nav>
 
@@ -532,7 +744,15 @@ export default function Dashboard({ user }) {
       <div className="main">
         <header className="topbar">
           <div>
-            <h1>{!onDashboard ? "All Folders" : view === "all" ? "Dashboard" : viewName}</h1>
+            <h1>
+              {page === "folders"
+                ? "All Folders"
+                : page === "schedule"
+                  ? "Schedule"
+                  : view === "all"
+                    ? "Dashboard"
+                    : viewName}
+            </h1>
             <p className="muted">{today}</p>
           </div>
           <div className="topbar-right">
@@ -540,23 +760,32 @@ export default function Dashboard({ user }) {
               <Icon name="search" size={16} />
               <input
                 type="search"
-                placeholder={onDashboard ? "Search tasks" : "Search folders"}
+                placeholder={page === "folders" ? "Search folders" : "Search tasks"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                aria-label={onDashboard ? "Search tasks" : "Search folders"}
+                aria-label={page === "folders" ? "Search folders" : "Search tasks"}
               />
             </label>
             <div className="user-pill" title={user.email}>
               <span className="avatar">{name.charAt(0).toUpperCase()}</span>
               <span className="user-name">{name}</span>
             </div>
+            <button
+              className="icon-btn mobile-only"
+              onClick={() => setPage(page === "schedule" ? "dashboard" : "schedule")}
+              aria-label={page === "schedule" ? "Back to dashboard" : "Open schedule"}
+            >
+              <Icon name={page === "schedule" ? "grid" : "calendar"} />
+            </button>
             <button className="icon-btn mobile-only" onClick={logout} aria-label="Log out">
               <Icon name="logout" />
             </button>
           </div>
         </header>
 
-        {page === "folders" ? (
+        {page === "schedule" ? (
+          schedulePage
+        ) : page === "folders" ? (
           /* ===== All Folders page (no statistics / recent tasks) ===== */
           <section className="folders-page">
             <div className="folders-head">
