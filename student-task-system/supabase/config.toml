@@ -472,3 +472,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/delete-folder/deno.json"
 entrypoint = "./functions/delete-folder/index.ts"
+
+[functions.move-task]
+enabled = true
+verify_jwt = true
+import_map = "./functions/move-task/deno.json"
+entrypoint = "./functions/move-task/index.ts"

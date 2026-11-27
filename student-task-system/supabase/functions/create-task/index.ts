@@ -3,14 +3,13 @@ import { fromSupabaseUrl, withSupabase } from "@supabase/server";
 import {
   handleErrors,
   HttpError,
+  optionalFolderId,
   readJsonBody,
-  requireFolderName,
   requireStudentId,
+  requireTaskId,
 } from "../_shared/helpers.ts";
 
-const MAX_FOLDERS_PER_STUDENT = 30;
-
-// CREATE FOLDER (e.g. a subject like "SSE3308")
+// MOVE TASK to another folder (or to "No folder" when folderId is null)
 export default {
   fetch: withSupabase(
     {
@@ -21,36 +20,37 @@ export default {
     handleErrors(async (req, ctx) => {
       const uid = requireStudentId(ctx); // verified UID from the token
       const body = await readJsonBody(req);
-      const name = requireFolderName(body); // 1-40 characters, checked on the server
+      const taskId = requireTaskId(body);
+      const folderId = optionalFolderId(body); // null = "No folder"
 
-      // Stop one user from flooding the database
-      const { count, error: countError } = await ctx.supabaseAdmin
-        .from("folders")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", uid);
-      if (countError) throw countError;
-      if ((count ?? 0) >= MAX_FOLDERS_PER_STUDENT) {
-        throw new HttpError(429, `Folder limit reached (${MAX_FOLDERS_PER_STUDENT}).`);
+      // 1. The target folder must belong to THIS student.
+      //    (The database has a second check: tasks_folder_owner_fkey.)
+      if (folderId) {
+        const { data: folder, error: folderError } = await ctx.supabaseAdmin
+          .from("folders")
+          .select("id")
+          .eq("id", folderId)
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (folderError) throw folderError;
+        if (!folder) throw new HttpError(404, "Folder not found.");
       }
 
-      // user_id comes from the token, never from the request body
+      // 2. Update only if the task ID matches AND the task belongs to this user.
       const { data, error } = await ctx.supabaseAdmin
-        .from("folders")
-        .insert({ user_id: uid, name })
-        .select("id")
-        .single();
-
-      // 23505 = unique rule broken: this student already has this folder name
-      if (error?.code === "23505") {
-        throw new HttpError(409, "You already have a folder with this name.");
-      }
+        .from("tasks")
+        .update({ folder_id: folderId })
+        .eq("id", taskId)
+        .eq("user_id", uid)
+        .select("id");
       if (error) throw error;
 
-      return {
-        success: true,
-        message: "Folder created successfully!",
-        folderId: data.id,
-      };
+      // Same message whether it does not exist or belongs to someone else
+      if (!data || data.length === 0) {
+        throw new HttpError(404, "Task not found.");
+      }
+
+      return { success: true, folderId };
     }),
   ),
 };
