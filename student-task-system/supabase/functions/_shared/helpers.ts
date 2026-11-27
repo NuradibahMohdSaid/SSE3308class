@@ -51,9 +51,37 @@ export function requireTaskId(body: Record<string, unknown>): string {
   return taskId;
 }
 
+// Folder IDs are UUIDs too.
+export function requireFolderId(body: Record<string, unknown>): string {
+  const folderId = body.folderId;
+  if (typeof folderId !== "string" || !UUID_PATTERN.test(folderId)) {
+    throw new HttpError(400, "Invalid folder ID.");
+  }
+  return folderId;
+}
+
+// For create-task: folderId is optional. Missing or null = "No folder".
+export function optionalFolderId(body: Record<string, unknown>): string | null {
+  if (body.folderId === undefined || body.folderId === null) return null;
+  return requireFolderId(body);
+}
+
 // Title must be text, 1-100 characters after trimming, no control characters.
 // deno-lint-ignore no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
+
+// Folder name: text, 1-40 characters after trimming, no control characters.
+export function requireFolderName(body: Record<string, unknown>): string {
+  const name = body.name;
+  if (typeof name !== "string") {
+    throw new HttpError(400, "Folder name must contain 1-40 characters.");
+  }
+  const clean = name.trim();
+  if (clean.length < 1 || clean.length > 40 || CONTROL_CHARS.test(clean)) {
+    throw new HttpError(400, "Folder name must contain 1-40 characters.");
+  }
+  return clean;
+}
 
 export function requireTitle(body: Record<string, unknown>): string {
   const title = body.title;
