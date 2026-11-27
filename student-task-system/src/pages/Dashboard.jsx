@@ -97,6 +97,13 @@ const ICONS = {
       <polyline points="12 19 5 12 12 5" />
     </>
   ),
+  menu: (
+    <>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+    </>
+  ),
   x: (
     <>
       <line x1="18" y1="6" x2="6" y2="18" />
@@ -219,6 +226,8 @@ export default function Dashboard({ user }) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selectedDay, setSelectedDay] = useState(todayString);
+  // Phone menu (the 3-line button in the header)
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // READ: load only this user's tasks.
   // The .eq() filter is for speed. The real protection is the RLS policy:
@@ -365,6 +374,21 @@ export default function Dashboard({ user }) {
 
   const logout = () => supabase.auth.signOut();
 
+  // While the phone menu is open: stop the page behind it from scrolling,
+  // and let the Escape key close it
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   // Folder lookup: id -> { name, colour }
   const folderInfo = useMemo(() => {
     const map = {};
@@ -426,7 +450,7 @@ export default function Dashboard({ user }) {
     .map((f, i) => ({ folder: f, colour: folderColour(i) }))
     .filter(({ folder }) => folder.name.toLowerCase().includes(search.trim().toLowerCase()));
 
-  // Folder list + "New folder" form (used in the sidebar and on mobile)
+  // Folder list + "New folder" form (sidebar, and the phone menu)
   const folderButtons = (
     <>
       <button
@@ -698,6 +722,29 @@ export default function Dashboard({ user }) {
           <span>StudentTask</span>
         </div>
 
+        {/* Phones only: opens the menu below */}
+        <button
+          className="menu-btn mobile-only"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          aria-controls="side-menu"
+        >
+          <Icon name={menuOpen ? "x" : "menu"} size={22} />
+        </button>
+
+        {/* Desktop: always shown. Phones: full-screen menu when open */}
+        <div
+          id="side-menu"
+          className={`side-body ${menuOpen ? "open" : ""}`}
+          onClick={(e) => {
+            // Close the phone menu after picking a page, list or folder
+            // (not for "New folder" or the delete X buttons)
+            if (e.target.closest("button.side-link, button.folder-link, .folder-open")) {
+              setMenuOpen(false);
+            }
+          }}
+        >
         <nav className="side-nav">
           <button
             className={`side-link ${onDashboard && view === "all" ? "active" : ""}`}
@@ -738,6 +785,7 @@ export default function Dashboard({ user }) {
         <button className="side-link side-logout" onClick={logout}>
           <Icon name="logout" /> Log Out
         </button>
+        </div>
       </aside>
 
       {/* ===== Main area ===== */}
@@ -770,16 +818,6 @@ export default function Dashboard({ user }) {
               <span className="avatar">{name.charAt(0).toUpperCase()}</span>
               <span className="user-name">{name}</span>
             </div>
-            <button
-              className="icon-btn mobile-only"
-              onClick={() => setPage(page === "schedule" ? "dashboard" : "schedule")}
-              aria-label={page === "schedule" ? "Back to dashboard" : "Open schedule"}
-            >
-              <Icon name={page === "schedule" ? "grid" : "calendar"} />
-            </button>
-            <button className="icon-btn mobile-only" onClick={logout} aria-label="Log out">
-              <Icon name="logout" />
-            </button>
           </div>
         </header>
 
@@ -888,12 +926,6 @@ export default function Dashboard({ user }) {
         <div className="content-grid">
           {/* ----- Left column ----- */}
           <div className="col-main">
-            {/* On phones the sidebar is hidden, so folders are shown here */}
-            <section className="card folder-strip mobile-block">
-              <h2>Folders ({folders.length})</h2>
-              <div className="folder-strip-list">{folderButtons}</div>
-            </section>
-
             <section className="summary">
               <div className="summary-card highlight">
                 <span className="summary-icon"><Icon name="list" size={22} /></span>
