@@ -432,6 +432,51 @@ div.folder-link { padding: 0 4px 0 0; }
 }
 .new-card .btn-primary, .new-card .btn-outline { padding: 8px 14px; font-size: 0.85rem; }
 
+/* ===== Due dates ===== */
+.date-input {
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fafbfd;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.date-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.date-input:disabled { opacity: 0.45; cursor: not-allowed; }
+.add-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+.add-foot .char-count { margin-top: 0; }
+.no-due {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.no-due input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+.due-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: #f1f2f6;
+  color: var(--muted);
+}
+.due-tag.later { background: #eaf2ff; color: #2f6fdb; }
+.due-tag.soon, .due-tag.today { background: var(--amber-soft); color: var(--amber); }
+.due-tag.overdue { background: var(--accent-soft); color: var(--accent-dark); }
+.due-tag.done { background: var(--green-soft); color: var(--green); }
+
 /* Folder dropdown on each task */
 .move-select {
   --folder: var(--muted);
@@ -755,6 +800,7 @@ div.folder-link { padding: 0 4px 0 0; }
   .col-side { grid-template-columns: 1fr; }
   .add-row { flex-direction: column; }
   .folder-select { max-width: none; padding: 11px 12px; }
+  .date-input { padding: 11px 12px; }
 
   /* Folders card on phones (dark text on white card) */
   .mobile-block { display: block; }

@@ -126,7 +126,25 @@ begin
 end $$;
 
 
--- 6. CHECK (optional) ---------------------------------------------------
+-- 6. DUE DATES ------------------------------------------------------------
+-- Optional deadline for each task (null = "No due date").
+-- A task with no due date is still pending until the student completes it.
+alter table public.tasks add column if not exists due_date date;
+
+-- Only sensible dates are allowed (the Edge Function checks this too)
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'tasks_due_date_check'
+  ) then
+    alter table public.tasks
+      add constraint tasks_due_date_check
+      check (due_date between date '2000-01-01' and date '2100-12-31');
+  end if;
+end $$;
+
+
+-- 7. CHECK (optional) ---------------------------------------------------
 -- Run these to confirm the setup:
 -- select relname, relrowsecurity from pg_class where relname in ('tasks', 'folders');  -- both true
 -- select tablename, policyname, cmd, roles from pg_policies where tablename in ('tasks', 'folders');  -- 2 rows, SELECT

@@ -3,28 +3,32 @@ import { fromSupabaseUrl, withSupabase } from "@supabase/server";
 import {
   handleErrors,
   HttpError,
+  optionalDueDate,
   optionalFolderId,
   readJsonBody,
   requireStudentId,
-  requireTaskId,
+  requireTitle,
 } from "../_shared/helpers.ts";
 
-// MOVE TASK to another folder (or to "No folder" when folderId is null)
+const MAX_TASKS_PER_STUDENT = 200;
+
+// CREATE TASK
 export default {
   fetch: withSupabase(
     {
-      auth: "user",
-      issuer: fromSupabaseUrl(Deno.env.get("SUPABASE_URL")!),
-      errors: { detailed: false },
+      auth: "user", // only logged-in users; the JWT signature is verified
+      issuer: fromSupabaseUrl(Deno.env.get("SUPABASE_URL")!), // only tokens from THIS project
+      errors: { detailed: false }, // short error messages for attackers
     },
     handleErrors(async (req, ctx) => {
       const uid = requireStudentId(ctx); // verified UID from the token
       const body = await readJsonBody(req);
-      const taskId = requireTaskId(body);
+      const title = requireTitle(body); // validate input on the server
       const folderId = optionalFolderId(body); // null = "No folder"
+      const dueDate = optionalDueDate(body); // null = "No due date"
 
-      // 1. The target folder must belong to THIS student.
-      //    (The database has a second check: tasks_folder_owner_fkey.)
+      // Ownership check: the folder must belong to THIS student.
+      // (The database has a second check: tasks_folder_owner_fkey.)
       if (folderId) {
         const { data: folder, error: folderError } = await ctx.supabaseAdmin
           .from("folders")
@@ -36,21 +40,29 @@ export default {
         if (!folder) throw new HttpError(404, "Folder not found.");
       }
 
-      // 2. Update only if the task ID matches AND the task belongs to this user.
-      const { data, error } = await ctx.supabaseAdmin
+      // Stop one user from flooding the database
+      const { count, error: countError } = await ctx.supabaseAdmin
         .from("tasks")
-        .update({ folder_id: folderId })
-        .eq("id", taskId)
-        .eq("user_id", uid)
-        .select("id");
-      if (error) throw error;
-
-      // Same message whether it does not exist or belongs to someone else
-      if (!data || data.length === 0) {
-        throw new HttpError(404, "Task not found.");
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", uid);
+      if (countError) throw countError;
+      if ((count ?? 0) >= MAX_TASKS_PER_STUDENT) {
+        throw new HttpError(429, `Task limit reached (${MAX_TASKS_PER_STUDENT}).`);
       }
 
-      return { success: true, folderId };
+      // user_id comes from the token, never from the request body
+      const { data, error } = await ctx.supabaseAdmin
+        .from("tasks")
+        .insert({ user_id: uid, title, completed: false, folder_id: folderId, due_date: dueDate })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: "Task created successfully!",
+        taskId: data.id,
+      };
     }),
   ),
 };

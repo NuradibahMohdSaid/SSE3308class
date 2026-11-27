@@ -81,6 +81,14 @@ const ICONS = {
   folder: (
     <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
   ),
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <line x1="16" y1="3" x2="16" y2="7" />
+      <line x1="8" y1="3" x2="8" y2="7" />
+      <line x1="3" y1="11" x2="21" y2="11" />
+    </>
+  ),
   back: (
     <>
       <line x1="19" y1="12" x2="5" y2="12" />
@@ -143,6 +151,29 @@ function formatDate(iso) {
 }
 
 // "5 minutes ago", "yesterday", ...
+// "YYYY-MM-DD" for today in the student's own time zone
+function todayString() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Text + colour for a task's due date
+function dueInfo(task) {
+  if (!task.due_date) return { label: "No due date", tone: "none" };
+  const [y, m, d] = task.due_date.split("-").map(Number);
+  const due = new Date(y, m - 1, d);
+  const label = due.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
+  if (task.completed) return { label: `Due ${label}`, tone: "done" };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((due - today) / 86400000);
+  if (days < 0) return { label: `Overdue · ${label}`, tone: "overdue" };
+  if (days === 0) return { label: "Due today", tone: "today" };
+  if (days === 1) return { label: "Due tomorrow", tone: "soon" };
+  return { label: `Due ${label}`, tone: "later" };
+}
+
 function timeAgo(iso) {
   const seconds = (Date.now() - new Date(iso).getTime()) / 1000;
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
@@ -165,6 +196,8 @@ export default function Dashboard({ user }) {
   const [taskFolder, setTaskFolder] = useState(""); // folder for the next new task
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [folderName, setFolderName] = useState("");
+  const [dueDate, setDueDate] = useState(""); // "YYYY-MM-DD"
+  const [noDueDate, setNoDueDate] = useState(false);
   // Which page is shown: "dashboard" (tasks) or "folders" (All Folders page)
   const [page, setPage] = useState("dashboard");
 
@@ -174,7 +207,7 @@ export default function Dashboard({ user }) {
   const loadTasks = useCallback(async () => {
     const { data, error } = await supabase
       .from("tasks")
-      .select("id, title, completed, created_at, folder_id")
+      .select("id, title, completed, created_at, folder_id, due_date")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -246,8 +279,21 @@ export default function Dashboard({ user }) {
     event.preventDefault();
     // Ignore a folder that no longer exists
     const folderId = taskFolder && folders.some((f) => f.id === taskFolder) ? taskFolder : null;
-    const ok = await run("create-task", { title, folderId });
-    if (ok) setTitle("");
+    // The student must pick a date OR tick "No due date"
+    if (!noDueDate && !dueDate) {
+      setError('Pick a due date, or tick "No due date".');
+      return;
+    }
+    const ok = await run("create-task", {
+      title,
+      folderId,
+      dueDate: noDueDate ? null : dueDate,
+    });
+    if (ok) {
+      setTitle("");
+      setDueDate("");
+      setNoDueDate(false);
+    }
   };
 
   // Open a folder (or "all" / "none"). New tasks go into the open folder.
@@ -664,11 +710,32 @@ export default function Dashboard({ user }) {
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}
                 </select>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={noDueDate ? "" : dueDate}
+                  min={todayString()}
+                  max="2100-12-31"
+                  onChange={(e) => setDueDate(e.target.value)}
+                  disabled={noDueDate}
+                  aria-label="Due date"
+                  title="Due date"
+                />
                 <button type="submit" className="btn-primary" disabled={busy || !title.trim()}>
                   <Icon name="plus" size={16} /> Add Task
                 </button>
               </div>
-              <small className="char-count">{title.length}/100</small>
+              <div className="add-foot">
+                <label className="no-due">
+                  <input
+                    type="checkbox"
+                    checked={noDueDate}
+                    onChange={(e) => setNoDueDate(e.target.checked)}
+                  />
+                  No due date
+                </label>
+                <small className="char-count">{title.length}/100</small>
+              </div>
             </form>
 
             {error && <p className="message">{error}</p>}
@@ -739,6 +806,9 @@ export default function Dashboard({ user }) {
                                 <option key={f.id} value={f.id}>{f.name}</option>
                               ))}
                             </select>
+                            <span className={`due-tag ${dueInfo(task).tone}`}>
+                              <Icon name="calendar" size={12} /> {dueInfo(task).label}
+                            </span>
                             <span>Added {formatDate(task.created_at)}</span>
                           </small>
                         </span>

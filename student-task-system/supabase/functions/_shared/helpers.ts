@@ -66,6 +66,28 @@ export function optionalFolderId(body: Record<string, unknown>): string | null {
   return requireFolderId(body);
 }
 
+// For create-task: dueDate is optional. Missing or null = "No due date".
+// Must be a real calendar date "YYYY-MM-DD" between 2000 and 2100.
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function optionalDueDate(body: Record<string, unknown>): string | null {
+  const value = body.dueDate;
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string" || !DATE_PATTERN.test(value)) {
+    throw new HttpError(400, "Invalid due date.");
+  }
+  const date = new Date(`${value}T00:00:00Z`);
+  // Rejects impossible dates like 2026-02-31
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new HttpError(400, "Invalid due date.");
+  }
+  const year = date.getUTCFullYear();
+  if (year < 2000 || year > 2100) {
+    throw new HttpError(400, "Invalid due date.");
+  }
+  return value;
+}
+
 // Title must be text, 1-100 characters after trimming, no control characters.
 // deno-lint-ignore no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
